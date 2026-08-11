@@ -1276,25 +1276,72 @@ jobs:
               }
 
               private void addDue(
-                      List<Vaccine> list,
-                      String name,
-                      String age,
-                      String max,
-                      String dose,
-                      String route,
-                      String site) {
+        List<Vaccine> list,
+        String name,
+        String age,
+        String max,
+        String dose,
+        String route,
+        String site) {
 
-                  list.add(
-                          new Vaccine(
-                                  name,
-                                  age,
-                                  max,
-                                  dose,
-                                  route,
-                                  site
-                          )
-                  );
-              }
+    if (dob == null) {
+        return;
+    }
+
+    Age currentAge = getAge(dob, today);
+
+    int months = currentAge.totalMonths;
+    int days = currentAge.totalDaysApprox();
+
+    boolean show = false;
+
+    if (name.equals("BCG")) {
+        show = days <= 365;
+
+    } else if (name.equals("fIPV-3")
+            || name.equals("PCV Booster")
+            || name.equals("MR-1")
+            || name.equals("JE-1")
+            || name.equals("Vitamin-A 1")) {
+
+        show = months >= 9 && months <= 12;
+
+    } else if (name.equals("MR-2")
+            || name.equals("JE-2")
+            || name.equals("DPT Booster-1")) {
+
+        show = months >= 16 && months <= 24;
+
+    } else if (name.equals("DPT Booster-2")) {
+
+        show = months >= 60 && months <= 72;
+
+    } else if (name.equals("Td-10")) {
+
+        show = months >= 120;
+
+    } else if (name.equals("Td-16")) {
+
+        show = months >= 192;
+
+    } else {
+
+        show = true;
+    }
+
+    if (show) {
+        list.add(
+                new Vaccine(
+                        name,
+                        age,
+                        max,
+                        dose,
+                        route,
+                        site
+                )
+        );
+    }
+}
 
               private LinearLayout vaccineRow(
                       Vaccine v,
