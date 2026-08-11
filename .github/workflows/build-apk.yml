@@ -1,9 +1,10 @@
-name: Build Age Calculator with Vaccine APK
+name: Age Calculator with Vaccine
 
 on:
   workflow_dispatch:
   push:
-    branches: ["**"]
+    branches:
+      - "**"
 
 permissions:
   contents: read
@@ -14,8 +15,17 @@ jobs:
 
     steps:
 
+      # =========================================================
+      # CHECKOUT
+      # =========================================================
+
       - name: Checkout
         uses: actions/checkout@v4
+
+
+      # =========================================================
+      # JAVA 17
+      # =========================================================
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
@@ -23,21 +33,40 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+
+      # =========================================================
+      # ANDROID SDK
+      # =========================================================
+
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
       - name: Accept Android SDK licenses
         shell: bash
-        run: yes | sdkmanager --licenses >/dev/null 2>&1 || true
+        run: |
+          yes | sdkmanager --licenses || true
 
-      - name: Install Android SDK 35
+      - name: Install Android SDK
         shell: bash
-        run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+        run: |
+          sdkmanager "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
+
+
+      # =========================================================
+      # GRADLE
+      # =========================================================
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.7"
+
+
+      # =========================================================
+      # CREATE PROJECT STRUCTURE
+      # =========================================================
 
       - name: Create project folders
         shell: bash
@@ -47,8 +76,13 @@ jobs:
           rm -rf app
 
           mkdir -p app/src/main/java/com/ak/agevaccine
-          mkdir -p app/src/main/res/values
           mkdir -p app/src/main/res/drawable
+          mkdir -p app/src/main/res/values
+
+
+      # =========================================================
+      # SETTINGS.GRADLE
+      # =========================================================
 
       - name: Create settings.gradle
         shell: bash
@@ -76,6 +110,11 @@ jobs:
           include(":app")
           EOF
 
+
+      # =========================================================
+      # ROOT BUILD.GRADLE
+      # =========================================================
+
       - name: Create root build.gradle
         shell: bash
         run: |
@@ -85,6 +124,11 @@ jobs:
           }
           EOF
 
+
+      # =========================================================
+      # GRADLE PROPERTIES
+      # =========================================================
+
       - name: Create gradle.properties
         shell: bash
         run: |
@@ -93,6 +137,11 @@ jobs:
           android.useAndroidX=true
           android.nonTransitiveRClass=true
           EOF
+
+
+      # =========================================================
+      # APP BUILD.GRADLE
+      # =========================================================
 
       - name: Create app build.gradle
         shell: bash
@@ -118,6 +167,7 @@ jobs:
               }
 
               buildTypes {
+
                   debug {
                       minifyEnabled false
                   }
@@ -127,18 +177,45 @@ jobs:
                   }
               }
           }
+
+          dependencies {
+              implementation 'androidx.appcompat:appcompat:1.7.1'
+              implementation 'androidx.activity:activity:1.10.1'
+          }
           EOF
 
-      - name: Create strings.xml
+
+      # =========================================================
+      # COLORS
+      # =========================================================
+
+      - name: Create colors.xml
         shell: bash
         run: |
-          cat > app/src/main/res/values/strings.xml <<'EOF'
+          cat > app/src/main/res/values/colors.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
 
           <resources>
-              <string name="app_name">आयु एवं टीका सहायक</string>
+
+              <color name="teal">#00897B</color>
+
+              <color name="teal_dark">#00695C</color>
+
+              <color name="blue">#1565C0</color>
+
+              <color name="white">#FFFFFF</color>
+
+              <color name="text_dark">#17324D</color>
+
+              <color name="background">#F4F8FA</color>
+
           </resources>
           EOF
+
+
+      # =========================================================
+      # THEME
+      # =========================================================
 
       - name: Create themes.xml
         shell: bash
@@ -150,54 +227,82 @@ jobs:
 
               <style
                   name="Theme.AgeVaccine"
-                  parent="android:style/Theme.Material.Light.NoActionBar">
+                  parent="Theme.AppCompat.DayNight.NoActionBar">
 
                   <item name="android:fontFamily">sans</item>
 
-                  <item name="android:colorAccent">#00A896</item>
-
-                  <item name="android:statusBarColor">#004D40</item>
-
-                  <item name="android:navigationBarColor">#004D40</item>
-
                   <item name="android:windowLightStatusBar">false</item>
+
+                  <item name="android:statusBarColor">#00695C</item>
+
+                  <item name="android:navigationBarColor">#000000</item>
+
+                  <item name="android:colorAccent">#00897B</item>
 
               </style>
 
           </resources>
           EOF
 
-      - name: Create vaccine icon
+
+      # =========================================================
+      # STRINGS
+      # =========================================================
+
+      - name: Create strings.xml
         shell: bash
         run: |
-          cat > app/src/main/res/drawable/ic_vaccine.xml <<'EOF'
+          cat > app/src/main/res/values/strings.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+
+          <resources>
+
+              <string name="app_name">आयु एवं टीकाकरण कैलकुलेटर</string>
+
+          </resources>
+          EOF
+
+
+      # =========================================================
+      # APP ICON
+      # =========================================================
+
+      - name: Create application icon
+        shell: bash
+        run: |
+          cat > app/src/main/res/drawable/ic_app.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
 
           <vector
               xmlns:android="http://schemas.android.com/apk/res/android"
-              android:width="48dp"
-              android:height="48dp"
-              android:viewportWidth="48"
-              android:viewportHeight="48">
+              android:width="108dp"
+              android:height="108dp"
+              android:viewportWidth="108"
+              android:viewportHeight="108">
+
+              <path
+                  android:fillColor="#00897B"
+                  android:pathData="M54,4A50,50 0,1 0,54 104A50,50 0,1 0,54 4" />
 
               <path
                   android:fillColor="#FFFFFF"
-                  android:pathData="M7,35 L19,23 L25,29 L13,41 Z"/>
+                  android:pathData="M28,51h52v8h-52z" />
 
               <path
                   android:fillColor="#FFFFFF"
-                  android:pathData="M18,24 L29,13 L35,19 L24,30 Z"/>
-
-              <path
-                  android:fillColor="#00A896"
-                  android:pathData="M27,12 L34,5 L43,14 L36,21 Z"/>
+                  android:pathData="M50,29h8v52h-8z" />
 
               <path
                   android:fillColor="#FFFFFF"
-                  android:pathData="M10,38 L5,43 L7,45 L12,40 Z"/>
+                  android:pathData="M38,70c7,-10 25,-10 32,0v8h-32z" />
 
           </vector>
           EOF
+
+
+      # =========================================================
+      # ANDROID MANIFEST
+      # =========================================================
 
       - name: Create AndroidManifest.xml
         shell: bash
@@ -211,7 +316,9 @@ jobs:
               <application
                   android:allowBackup="true"
                   android:label="@string/app_name"
-                  android:icon="@drawable/ic_vaccine"
+                  android:icon="@drawable/ic_app"
+                  android:roundIcon="@drawable/ic_app"
+                  android:supportsRtl="true"
                   android:theme="@style/Theme.AgeVaccine">
 
                   <activity
@@ -222,10 +329,10 @@ jobs:
                       <intent-filter>
 
                           <action
-                              android:name="android.intent.action.MAIN"/>
+                              android:name="android.intent.action.MAIN" />
 
                           <category
-                              android:name="android.intent.category.LAUNCHER"/>
+                              android:name="android.intent.category.LAUNCHER" />
 
                       </intent-filter>
 
@@ -235,318 +342,499 @@ jobs:
 
           </manifest>
           EOF
-                - name: Create MainActivity part 1
+
+
+      # =========================================================
+      # MAIN ACTIVITY
+      # =========================================================
+
+      - name: Create MainActivity.java
         shell: bash
         run: |
           cat > app/src/main/java/com/ak/agevaccine/MainActivity.java <<'EOF'
           package com.ak.agevaccine;
 
-          import android.app.Activity;
           import android.app.DatePickerDialog;
-          import android.app.AlertDialog;
-          import android.os.Bundle;
+          import android.app.Dialog;
           import android.graphics.Color;
           import android.graphics.Typeface;
-          import android.graphics.drawable.GradientDrawable;
+          import android.os.Bundle;
           import android.view.Gravity;
           import android.view.View;
-          import android.widget.ArrayAdapter;
+          import android.view.ViewGroup;
           import android.widget.Button;
-          import android.widget.EditText;
+          import android.widget.DatePicker;
           import android.widget.LinearLayout;
+          import android.widget.RadioButton;
+          import android.widget.RadioGroup;
           import android.widget.ScrollView;
-          import android.widget.Spinner;
           import android.widget.TextView;
           import android.widget.Toast;
 
+          import androidx.appcompat.app.AppCompatActivity;
+
           import java.text.SimpleDateFormat;
+          import java.util.ArrayList;
           import java.util.Calendar;
-          import java.util.Date;
+          import java.util.List;
           import java.util.Locale;
 
-          public class MainActivity extends Activity {
 
-              private LinearLayout root;
+          public class MainActivity extends AppCompatActivity {
+
+
+              private static final int TEAL =
+                      Color.rgb(0, 137, 123);
+
+              private static final int DARK =
+                      Color.rgb(23, 50, 77);
+
+              private static final int BACKGROUND =
+                      Color.rgb(244, 248, 250);
+
+
+              private Calendar dob;
+
+              private Calendar today =
+                      Calendar.getInstance();
+
+
+              private TextView dobText;
+
+              private TextView todayText;
+
+              private RadioGroup genderGroup;
+
               private LinearLayout resultBox;
 
-              private EditText dobInput;
-              private EditText todayInput;
-              private Spinner genderSpinner;
 
-              private TextView ageResult;
-              private TextView dueResult;
+              // =====================================================
+              // DP
+              // =====================================================
 
-              private final int TEAL = Color.rgb(0, 137, 123);
-              private final int DARK = Color.rgb(0, 77, 64);
-              private final int LIGHT = Color.rgb(232, 245, 243);
-              private final int TEXT = Color.rgb(35, 45, 50);
-              private final int WHITE = Color.WHITE;
+              private int dp(float value) {
 
-              private final Calendar today = Calendar.getInstance();
+                  return (int)
+                          (value *
+                                  getResources()
+                                      .getDisplayMetrics()
+                                      .density
+                                  + 0.5f);
+              }
+
+
+              // =====================================================
+              // ON CREATE
+              // =====================================================
 
               @Override
-              protected void onCreate(Bundle savedInstanceState) {
+              protected void onCreate(
+                      Bundle savedInstanceState) {
+
                   super.onCreate(savedInstanceState);
 
                   buildInterface();
               }
 
-              private void buildInterface() {
 
-                  root = new LinearLayout(this);
-                  root.setOrientation(LinearLayout.VERTICAL);
-                  root.setBackgroundColor(Color.rgb(246, 249, 248));
+              // =====================================================
+              // TEXT
+              // =====================================================
 
-                  root.addView(createHeader());
+              private TextView text(
+                      String value,
+                      float size,
+                      int color,
+                      boolean bold) {
 
-                  ScrollView scroll = new ScrollView(this);
-                  scroll.setFillViewport(true);
+                  TextView t =
+                          new TextView(this);
 
-                  LinearLayout content = new LinearLayout(this);
-                  content.setOrientation(LinearLayout.VERTICAL);
-                  content.setPadding(dp(16), dp(14), dp(16), dp(30));
+                  t.setText(value);
 
-                  content.addView(createIntroCard());
+                  t.setTextSize(size);
 
-                  content.addView(createInputCard());
+                  t.setTextColor(color);
 
-                  resultBox = new LinearLayout(this);
-                  resultBox.setOrientation(LinearLayout.VERTICAL);
-                  resultBox.setVisibility(View.GONE);
+                  t.setTypeface(
+                          Typeface.DEFAULT,
+                          bold
+                                  ? Typeface.BOLD
+                                  : Typeface.NORMAL
+                  );
 
-                  content.addView(resultBox);
+                  t.setPadding(
+                          dp(4),
+                          dp(4),
+                          dp(4),
+                          dp(4)
+                  );
 
-                  LinearLayout.LayoutParams scrollParams =
-                          new LinearLayout.LayoutParams(
-                                  -1,
-                                  0,
-                                  1
-                          );
-
-                  scroll.addView(content);
-
-                  root.addView(scroll, scrollParams);
-
-                  setContentView(root);
+                  return t;
               }
 
-              private View createHeader() {
 
-                  LinearLayout header = new LinearLayout(this);
-                  header.setGravity(Gravity.CENTER_VERTICAL);
-                  header.setPadding(dp(16), dp(12), dp(16), dp(12));
-                  header.setBackgroundColor(DARK);
+              // =====================================================
+              // BUTTON
+              // =====================================================
 
-                  TextView icon = new TextView(this);
-                  icon.setText("💉");
-                  icon.setTextSize(30);
-                  icon.setGravity(Gravity.CENTER);
+              private Button button(
+                      String value) {
 
-                  header.addView(
-                          icon,
+                  Button b =
+                          new Button(this);
+
+                  b.setText(value);
+
+                  b.setTextSize(15);
+
+                  b.setTextColor(Color.WHITE);
+
+                  b.setAllCaps(false);
+
+                  b.setBackgroundColor(TEAL);
+
+                  return b;
+              }
+
+
+              // =====================================================
+              // CARD
+              // =====================================================
+
+              private LinearLayout card() {
+
+                  LinearLayout c =
+                          new LinearLayout(this);
+
+                  c.setOrientation(
+                          LinearLayout.VERTICAL
+                  );
+
+                  c.setPadding(
+                          dp(14),
+                          dp(12),
+                          dp(14),
+                          dp(12)
+                  );
+
+                  android.graphics.drawable
+                          .GradientDrawable bg =
+                          new android.graphics.drawable
+                                  .GradientDrawable();
+
+                  bg.setColor(Color.WHITE);
+
+                  bg.setCornerRadius(
+                          dp(14)
+                  );
+
+                  bg.setStroke(
+                          dp(1),
+                          Color.rgb(
+                                  220,
+                                  230,
+                                  232
+                          )
+                  );
+
+                  c.setBackground(bg);
+
+                  LinearLayout.LayoutParams p =
                           new LinearLayout.LayoutParams(
-                                  dp(48),
+                                  ViewGroup.LayoutParams.MATCH_PARENT,
+                                  ViewGroup.LayoutParams.WRAP_CONTENT
+                          );
+
+                  p.setMargins(
+                          0,
+                          dp(8),
+                          0,
+                          dp(8)
+                  );
+
+                  c.setLayoutParams(p);
+
+                  return c;
+              }
+
+
+              // =====================================================
+              // MAIN INTERFACE
+              // =====================================================
+
+              private void buildInterface() {
+
+                  ScrollView scroll =
+                          new ScrollView(this);
+
+                  scroll.setFillViewport(true);
+
+                  scroll.setBackgroundColor(
+                          BACKGROUND
+                  );
+
+
+                  LinearLayout root =
+                          new LinearLayout(this);
+
+                  root.setOrientation(
+                          LinearLayout.VERTICAL
+                  );
+
+                  root.setPadding(
+                          dp(14),
+                          dp(10),
+                          dp(14),
+                          dp(18)
+                  );
+
+
+                  // HEADER
+                  LinearLayout header =
+                          new LinearLayout(this);
+
+                  header.setOrientation(
+                          LinearLayout.VERTICAL
+                  );
+
+                  header.setPadding(
+                          dp(16),
+                          dp(18),
+                          dp(16),
+                          dp(18)
+                  );
+
+
+                  android.graphics.drawable
+                          .GradientDrawable headerBg =
+                          new android.graphics.drawable
+                                  .GradientDrawable();
+
+                  headerBg.setColor(TEAL);
+
+                  headerBg.setCornerRadius(
+                          dp(18)
+                  );
+
+                  header.setBackground(
+                          headerBg
+                  );
+
+
+                  TextView title =
+                          text(
+                                  "आयु एवं टीकाकरण कैलकुलेटर",
+                                  22,
+                                  Color.WHITE,
+                                  true
+                          );
+
+
+                  TextView subtitle =
+                          text(
+                                  "Age Calculator • Routine Immunization",
+                                  13,
+                                  Color.WHITE,
+                                  false
+                          );
+
+
+                  header.addView(title);
+
+                  header.addView(subtitle);
+
+                  root.addView(header);
+
+
+                  // =================================================
+                  // INFORMATION CARD
+                  // =================================================
+
+                  LinearLayout info =
+                          card();
+
+
+                  info.addView(
+                          text(
+                                  "लाभार्थी की जानकारी",
+                                  18,
+                                  DARK,
+                                  true
+                          )
+                  );
+
+
+                  // DOB BUTTON
+                  Button dobButton =
+                          button(
+                                  "📅  जन्म तिथि चुनें"
+                          );
+
+
+                  dobButton.setOnClickListener(
+                          v -> pickDob()
+                  );
+
+
+                  info.addView(
+                          dobButton,
+                          new LinearLayout.LayoutParams(
+                                  -1,
                                   dp(48)
                           )
                   );
 
-                  LinearLayout titles = new LinearLayout(this);
-                  titles.setOrientation(LinearLayout.VERTICAL);
-                  titles.setPadding(dp(10), 0, 0, 0);
 
-                  TextView title = text(
-                          "आयु एवं टीका सहायक",
-                          20,
-                          WHITE,
-                          true
+                  dobText =
+                          text(
+                                  "जन्म तिथि नहीं चुनी गई",
+                                  14,
+                                  Color.DKGRAY,
+                                  false
+                          );
+
+
+                  info.addView(dobText);
+
+
+                  // TODAY BUTTON
+                  Button todayButton =
+                          button(
+                                  "📅  आज की तारीख चुनें"
+                          );
+
+
+                  todayButton.setOnClickListener(
+                          v -> pickToday()
                   );
 
-                  TextView subtitle = text(
-                          "Age Calculator • Vaccine Due",
-                          12,
-                          Color.rgb(200, 235, 230),
-                          false
-                  );
 
-                  titles.addView(title);
-                  titles.addView(subtitle);
-
-                  header.addView(
-                          titles,
+                  info.addView(
+                          todayButton,
                           new LinearLayout.LayoutParams(
-                                  0,
-                                  -2,
-                                  1
+                                  -1,
+                                  dp(48)
                           )
                   );
 
-                  Button tableButton = smallButton("📋");
 
-                  tableButton.setContentDescription(
-                          "टीकाकरण टाइम टेबल"
-                  );
-
-                  tableButton.setOnClickListener(
-                          v -> showVaccinationTable()
-                  );
-
-                  header.addView(tableButton);
-
-                  return header;
-              }
-
-              private View createIntroCard() {
-
-                  LinearLayout card = card();
-
-                  TextView title = text(
-                          "👶 व्यक्ति की आयु और टीका स्थिति",
-                          18,
-                          DARK,
-                          true
-                  );
-
-                  TextView info = text(
-                          "जन्म तिथि और गणना की तारीख दर्ज करें। "
-                          + "ऐप आयु वर्ष + माह + दिन में बताएगा "
-                          + "और आयु के अनुसार देय टीकों की सूची दिखाएगा।",
-                          14,
-                          TEXT,
-                          false
-                  );
-
-                  info.setPadding(0, dp(8), 0, 0);
-
-                  card.addView(title);
-                  card.addView(info);
-
-                  return card;
-              }
-
-              private View createInputCard() {
-
-                  LinearLayout card = card();
-
-                  TextView heading = text(
-                          "जानकारी दर्ज करें",
-                          18,
-                          DARK,
-                          true
-                  );
-
-                  card.addView(heading);
-
-                  TextView genderLabel = label("लिंग");
-
-                  card.addView(genderLabel);
-
-                  genderSpinner = new Spinner(this);
-
-                  String[] genders = {
-                          "Female / महिला",
-                          "Male / पुरुष"
-                  };
-
-                  ArrayAdapter<String> adapter =
-                          new ArrayAdapter<String>(
-                                  this,
-                                  android.R.layout.simple_spinner_dropdown_item,
-                                  genders
+                  todayText =
+                          text(
+                                  "",
+                                  14,
+                                  Color.DKGRAY,
+                                  false
                           );
 
-                  genderSpinner.setAdapter(adapter);
 
-                  card.addView(
-                          genderSpinner,
-                          fieldParams()
+                  info.addView(todayText);
+
+
+                  // GENDER
+                  info.addView(
+                          text(
+                                  "लिंग",
+                                  16,
+                                  DARK,
+                                  true
+                          )
                   );
 
-                  TextView dobLabel = label(
-                          "जन्म तिथि (DD/MM/YYYY)"
+
+                  genderGroup =
+                          new RadioGroup(this);
+
+                  genderGroup.setOrientation(
+                          RadioGroup.HORIZONTAL
                   );
 
-                  card.addView(dobLabel);
 
-                  dobInput = dateField(
-                          "जन्म तिथि चुनें या टाइप करें"
+                  RadioButton male =
+                          new RadioButton(this);
+
+                  male.setText(
+                          "पुरुष / बालक"
                   );
 
-                  card.addView(
-                          dobInput,
-                          fieldParams()
+                  male.setTextSize(15);
+
+                  male.setId(
+                          View.generateViewId()
                   );
 
-                  TextView todayLabel = label(
-                          "गणना की तारीख (DD/MM/YYYY)"
+                  male.setChecked(true);
+
+
+                  RadioButton female =
+                          new RadioButton(this);
+
+                  female.setText(
+                          "महिला / बालिका"
                   );
 
-                  card.addView(todayLabel);
+                  female.setTextSize(15);
 
-                  todayInput = dateField(
-                          "आज की तारीख चुनें या टाइप करें"
+                  female.setId(
+                          View.generateViewId()
                   );
 
-                  todayInput.setText(
-                          formatDate(today)
-                  );
 
-                  card.addView(
-                          todayInput,
-                          fieldParams()
-                  );
+                  genderGroup.addView(male);
 
-                  Button calculate = new Button(this);
+                  genderGroup.addView(female);
 
-                  calculate.setText("✓  आयु एवं टीका जांचें");
-                  calculate.setTextSize(16);
-                  calculate.setTextColor(WHITE);
-                  calculate.setAllCaps(false);
-                  calculate.setTypeface(
-                          Typeface.DEFAULT,
-                          Typeface.BOLD
-                  );
+                  info.addView(genderGroup);
 
-                  GradientDrawable buttonBg =
-                          rounded(TEAL, 18);
 
-                  calculate.setBackground(buttonBg);
+                  // CALCULATE
+                  Button calculate =
+                          button(
+                                  "आयु और Due Vaccines देखें"
+                          );
 
-                  calculate.setPadding(
-                          dp(12),
-                          dp(10),
-                          dp(12),
-                          dp(10)
-                  );
 
                   calculate.setOnClickListener(
                           v -> calculateAndShow()
                   );
 
-                  LinearLayout.LayoutParams bp =
+
+                  info.addView(
+                          calculate,
                           new LinearLayout.LayoutParams(
                                   -1,
-                                  dp(54)
+                                  dp(52)
+                          )
+                  );
+
+
+                  root.addView(info);
+
+
+                  // RESULT
+                  resultBox =
+                          new LinearLayout(this);
+
+                  resultBox.setOrientation(
+                          LinearLayout.VERTICAL
+                  );
+
+                  root.addView(resultBox);
+
+
+                  // TIMETABLE
+                  Button timetable =
+                          button(
+                                  "📋  टीकाकरण टाइम-टेबल / जानकारी"
                           );
 
-                  bp.topMargin = dp(18);
-
-                  card.addView(calculate, bp);
-
-                  Button timetable = new Button(this);
-
-                  timetable.setText(
-                          "📋  पूरा Vaccination Time Table"
-                  );
-
-                  timetable.setTextSize(15);
-                  timetable.setAllCaps(false);
-                  timetable.setTextColor(DARK);
 
                   timetable.setOnClickListener(
-                          v -> showVaccinationTable()
+                          v -> showTimetable()
                   );
 
-                  card.addView(
+
+                  root.addView(
                           timetable,
                           new LinearLayout.LayoutParams(
                                   -1,
@@ -554,1389 +842,1196 @@ jobs:
                           )
                   );
 
-                  return card;
-              }
 
-              private EditText dateField(String hint) {
+                  TextView note =
+                          text(
+                                  "नोट: Due सूची आयु के आधार पर संभावित due vaccines दिखाती है। वास्तविक vaccination history तथा स्थानीय/सरकारी guideline के अनुसार स्वास्थ्यकर्मी अंतिम निर्णय लें।",
+                                  12,
+                                  Color.GRAY,
+                                  false
+                          );
 
-                  EditText e = new EditText(this);
 
-                  e.setHint(hint);
-                  e.setTextSize(15);
-                  e.setSingleLine(true);
-                  e.setPadding(
+                  note.setPadding(
+                          dp(6),
                           dp(14),
-                          0,
-                          dp(14),
-                          0
+                          dp(6),
+                          dp(8)
                   );
 
-                  e.setBackground(
-                          rounded(Color.WHITE, 14)
+
+                  root.addView(note);
+
+
+                  scroll.addView(root);
+
+                  setContentView(scroll);
+
+
+                  todayText.setText(
+                          "आज: " + format(today)
                   );
+              }
 
-                  e.setCompoundDrawablesWithIntrinsicBounds(
-                          android.R.drawable.ic_menu_my_calendar,
-                          0,
-                          0,
-                          0
+
+              // =====================================================
+              // DOB PICKER
+              // =====================================================
+
+              private void pickDob() {
+
+                  Calendar initial =
+                          dob == null
+                                  ? Calendar.getInstance()
+                                  : dob;
+
+
+                  DatePickerDialog dialog =
+                          new DatePickerDialog(
+                                  this,
+                                  (
+                                          DatePicker view,
+                                          int year,
+                                          int month,
+                                          int day
+                                  ) -> {
+
+                                      dob =
+                                              Calendar.getInstance();
+
+                                      dob.set(
+                                              year,
+                                              month,
+                                              day,
+                                              0,
+                                              0,
+                                              0
+                                      );
+
+                                      dob.set(
+                                              Calendar.MILLISECOND,
+                                              0
+                                      );
+
+
+                                      dobText.setText(
+                                              "जन्म तिथि: "
+                                                      + format(dob)
+                                      );
+                                  },
+
+                                  initial.get(
+                                          Calendar.YEAR
+                                  ),
+
+                                  initial.get(
+                                          Calendar.MONTH
+                                  ),
+
+                                  initial.get(
+                                          Calendar.DAY_OF_MONTH
+                                  )
+                          );
+
+
+                  dialog.getDatePicker()
+                          .setMaxDate(
+                                  System.currentTimeMillis()
+                          );
+
+
+                  dialog.show();
+              }
+
+
+              // =====================================================
+              // TODAY PICKER
+              // =====================================================
+
+              private void pickToday() {
+
+                  Calendar initial =
+                          today;
+
+
+                  DatePickerDialog dialog =
+                          new DatePickerDialog(
+                                  this,
+                                  (
+                                          DatePicker view,
+                                          int year,
+                                          int month,
+                                          int day
+                                  ) -> {
+
+                                      today =
+                                              Calendar.getInstance();
+
+                                      today.set(
+                                              year,
+                                              month,
+                                              day,
+                                              0,
+                                              0,
+                                              0
+                                      );
+
+                                      today.set(
+                                              Calendar.MILLISECOND,
+                                              0
+                                      );
+
+
+                                      todayText.setText(
+                                              "आज की तारीख: "
+                                                      + format(today)
+                                      );
+                                  },
+
+                                  initial.get(
+                                          Calendar.YEAR
+                                  ),
+
+                                  initial.get(
+                                          Calendar.MONTH
+                                  ),
+
+                                  initial.get(
+                                          Calendar.DAY_OF_MONTH
+                                  )
+                          );
+
+
+                  dialog.getDatePicker()
+                          .setMaxDate(
+                                  System.currentTimeMillis()
+                          );
+
+
+                  dialog.show();
+              }
+
+
+              // =====================================================
+              // DATE FORMAT
+              // =====================================================
+
+              private String format(
+                      Calendar c) {
+
+                  return new SimpleDateFormat(
+                          "dd-MM-yyyy",
+                          Locale.getDefault()
+                  ).format(
+                          c.getTime()
                   );
-
-                  e.setCompoundDrawablePadding(dp(10));
-
-                  e.setOnClickListener(
-                          v -> openDatePicker(e)
-                  );
-
-                  return e;
-              }
-              EOF
-                    - name: Create MainActivity part 2
-        shell: bash
-        run: |
-          cat >> app/src/main/java/com/ak/agevaccine/MainActivity.java <<'EOF'
-
-          private void openDatePicker(EditText target) {
-
-              Calendar selected = Calendar.getInstance();
-
-              Calendar parsed = parseDate(target.getText().toString());
-
-              if (parsed != null) {
-                  selected = parsed;
               }
 
-              DatePickerDialog dialog =
-                      new DatePickerDialog(
-                              this,
-                              (view, year, month, day) -> {
 
-                                  Calendar c = Calendar.getInstance();
+              // =====================================================
+              // ADD AGE
+              // =====================================================
 
-                                  c.set(
-                                          year,
-                                          month,
-                                          day
-                                  );
+              private Calendar addAge(
+                      Calendar base,
+                      int years,
+                      int months,
+                      int days) {
 
-                                  target.setText(
-                                          formatDate(c)
-                                  );
-                              },
-                              selected.get(
-                                      Calendar.YEAR
-                              ),
-                              selected.get(
-                                      Calendar.MONTH
-                              ),
-                              selected.get(
-                                      Calendar.DAY_OF_MONTH
-                              )
-                      );
+                  Calendar c =
+                          (Calendar)
+                                  base.clone();
 
-              dialog.show();
-          }
-
-          private void calculateAndShow() {
-
-              Calendar dob =
-                      parseDate(
-                              dobInput.getText().toString()
-                      );
-
-              Calendar calcDate =
-                      parseDate(
-                              todayInput.getText().toString()
-                      );
-
-              if (dob == null || calcDate == null) {
-
-                  Toast.makeText(
-                          this,
-                          "कृपया दोनों तारीख सही DD/MM/YYYY में दर्ज करें।",
-                          Toast.LENGTH_LONG
-                  ).show();
-
-                  return;
-              }
-
-              if (dob.after(calcDate)) {
-
-                  Toast.makeText(
-                          this,
-                          "जन्म तिथि गणना की तारीख से आगे नहीं हो सकती।",
-                          Toast.LENGTH_LONG
-                  ).show();
-
-                  return;
-              }
-
-              int[] age = calculateAge(
-                      dob,
-                      calcDate
-              );
-
-              int years = age[0];
-              int months = age[1];
-              int days = age[2];
-
-              resultBox.removeAllViews();
-              resultBox.setVisibility(View.VISIBLE);
-
-              LinearLayout ageCard = card();
-
-              TextView heading = text(
-                      "🎯 गणना का परिणाम",
-                      18,
-                      DARK,
-                      true
-              );
-
-              ageCard.addView(heading);
-
-              TextView ageText = text(
-                      years + " वर्ष  " +
-                      months + " माह  " +
-                      days + " दिन",
-                      25,
-                      TEAL,
-                      true
-              );
-
-              ageText.setGravity(Gravity.CENTER);
-
-              ageCard.addView(
-                      ageText,
-                      new LinearLayout.LayoutParams(
-                              -1,
-                              dp(70)
-                      )
-              );
-
-              TextView dobText = text(
-                      "जन्म तिथि : "
-                              + dobInput.getText().toString()
-                              + "\nगणना तिथि : "
-                              + todayInput.getText().toString(),
-                      13,
-                      Color.DKGRAY,
-                      false
-              );
-
-              ageCard.addView(dobText);
-
-              resultBox.addView(ageCard);
-
-              showDueVaccines(
-                      years,
-                      months,
-                      days,
-                      dob,
-                      calcDate
-              );
-          }
-
-          private int[] calculateAge(
-                  Calendar dob,
-                  Calendar current
-          ) {
-
-              Calendar start =
-                      (Calendar) dob.clone();
-
-              Calendar end =
-                      (Calendar) current.clone();
-
-              int years =
-                      end.get(Calendar.YEAR)
-                              - start.get(Calendar.YEAR);
-
-              Calendar anniversary =
-                      (Calendar) start.clone();
-
-              anniversary.add(
-                      Calendar.YEAR,
-                      years
-              );
-
-              if (anniversary.after(end)) {
-
-                  years--;
-
-                  anniversary =
-                          (Calendar) start.clone();
-
-                  anniversary.add(
+                  c.add(
                           Calendar.YEAR,
                           years
                   );
-              }
 
-              int months = 0;
-
-              Calendar monthPoint =
-                      (Calendar) anniversary.clone();
-
-              while (true) {
-
-                  Calendar next =
-                          (Calendar) monthPoint.clone();
-
-                  next.add(
+                  c.add(
                           Calendar.MONTH,
-                          1
+                          months
                   );
 
-                  if (next.after(end)) {
-                      break;
-                  }
-
-                  monthPoint = next;
-                  months++;
-              }
-
-              long diff =
-                      end.getTimeInMillis()
-                              - monthPoint.getTimeInMillis();
-
-              int days =
-                      (int) (
-                              diff
-                              / (24L * 60L * 60L * 1000L)
-                      );
-
-              return new int[]{
-                      years,
-                      months,
-                      days
-              };
-          }
-
-          private Calendar parseDate(String value) {
-
-              if (value == null ||
-                      value.trim().isEmpty()) {
-                  return null;
-              }
-
-              try {
-
-                  SimpleDateFormat sdf =
-                          new SimpleDateFormat(
-                                  "dd/MM/yyyy",
-                                  Locale.ENGLISH
-                          );
-
-                  sdf.setLenient(false);
-
-                  Date d =
-                          sdf.parse(value.trim());
-
-                  Calendar c =
-                          Calendar.getInstance();
-
-                  c.setTime(d);
-
-                  c.set(
-                          Calendar.HOUR_OF_DAY,
-                          12
-                  );
-
-                  c.set(
-                          Calendar.MINUTE,
-                          0
-                  );
-
-                  c.set(
-                          Calendar.SECOND,
-                          0
-                  );
-
-                  c.set(
-                          Calendar.MILLISECOND,
-                          0
+                  c.add(
+                          Calendar.DAY_OF_MONTH,
+                          days
                   );
 
                   return c;
-
-              } catch (Exception e) {
-
-                  return null;
               }
-          }
 
-          private String formatDate(Calendar c) {
 
-              SimpleDateFormat sdf =
-                      new SimpleDateFormat(
-                              "dd/MM/yyyy",
-                              Locale.ENGLISH
+              // =====================================================
+              // AGE CALCULATION
+              // =====================================================
+
+              private String ageText(
+                      Calendar birth,
+                      Calendar asOf) {
+
+                  if (asOf.before(birth)) {
+
+                      return "अमान्य तारीख";
+                  }
+
+
+                  int years = 0;
+
+                  int months = 0;
+
+
+                  while (
+                          !addAge(
+                                  birth,
+                                  years + 1,
+                                  0,
+                                  0
+                          ).after(asOf)
+                  ) {
+
+                      years++;
+                  }
+
+
+                  Calendar temp =
+                          addAge(
+                                  birth,
+                                  years,
+                                  0,
+                                  0
+                          );
+
+
+                  while (
+                          !addAge(
+                                  temp,
+                                  0,
+                                  months + 1,
+                                  0
+                          ).after(asOf)
+                  ) {
+
+                      months++;
+                  }
+
+
+                  temp =
+                          addAge(
+                                  temp,
+                                  0,
+                                  months,
+                                  0
+                          );
+
+
+                  long millis =
+                          asOf.getTimeInMillis()
+                                  -
+                                  temp.getTimeInMillis();
+
+
+                  int days =
+                          (int)
+                                  (
+                                          millis
+                                                  /
+                                                  (
+                                                          24L
+                                                                  *
+                                                                  60L
+                                                                  *
+                                                                  60L
+                                                                  *
+                                                                  1000L
+                                                  )
+                                  );
+
+
+                  return
+                          years
+                                  + " वर्ष "
+                                  + months
+                                  + " माह "
+                                  + days
+                                  + " दिन";
+              }
+
+
+              // =====================================================
+              // GENDER
+              // =====================================================
+
+              private boolean isFemale() {
+
+                  int id =
+                          genderGroup
+                                  .getCheckedRadioButtonId();
+
+
+                  RadioButton selected =
+                          findViewById(id);
+
+
+                  if (selected == null) {
+
+                      return false;
+                  }
+
+
+                  return selected
+                          .getText()
+                          .toString()
+                          .contains("महिला");
+              }
+
+
+              // =====================================================
+              // AGE THRESHOLD
+              // =====================================================
+
+              private boolean reached(
+                      int years,
+                      int months,
+                      int days) {
+
+                  return !today.before(
+                          addAge(
+                                  dob,
+                                  years,
+                                  months,
+                                  days
+                          )
+                  );
+              }
+
+
+              // =====================================================
+              // BEFORE MAX AGE
+              // =====================================================
+
+              private boolean beforeLimit(
+                      int years,
+                      int months,
+                      int days) {
+
+                  return today.before(
+                          addAge(
+                                  dob,
+                                  years,
+                                  months,
+                                  days
+                          )
+                  );
+              }
+
+
+              // =====================================================
+              // CALCULATE
+              // =====================================================
+
+              private void calculateAndShow() {
+
+                  if (dob == null) {
+
+                      Toast.makeText(
+                              this,
+                              "पहले जन्म तिथि चुनें",
+                              Toast.LENGTH_SHORT
+                      ).show();
+
+                      return;
+                  }
+
+
+                  if (today.before(dob)) {
+
+                      Toast.makeText(
+                              this,
+                              "आज की तारीख जन्म तिथि से पहले नहीं हो सकती",
+                              Toast.LENGTH_SHORT
+                      ).show();
+
+                      return;
+                  }
+
+
+                  resultBox.removeAllViews();
+
+
+                  // AGE CARD
+                  LinearLayout ageCard =
+                          card();
+
+
+                  ageCard.addView(
+                          text(
+                                  "आयु",
+                                  18,
+                                  DARK,
+                                  true
+                          )
+                  );
+
+
+                  ageCard.addView(
+                          text(
+                                  ageText(
+                                          dob,
+                                          today
+                                  ),
+                                  24,
+                                  TEAL,
+                                  true
+                          )
+                  );
+
+
+                  ageCard.addView(
+                          text(
+                                  "गणना की तारीख: "
+                                          + format(today),
+                                  13,
+                                  Color.GRAY,
+                                  false
+                          )
+                  );
+
+
+                  resultBox.addView(ageCard);
+
+
+                  // DUE CARD
+                  LinearLayout dueCard =
+                          card();
+
+
+                  dueCard.addView(
+                          text(
+                                  "💉 संभावित Due Vaccines",
+                                  18,
+                                  DARK,
+                                  true
+                          )
+                  );
+
+
+                  List<String> due =
+                          getDueVaccines();
+
+
+                  if (due.isEmpty()) {
+
+                      dueCard.addView(
+                              text(
+                                      "इस आयु पर कोई vaccine due नहीं मिली।",
+                                      15,
+                                      Color.DKGRAY,
+                                      false
+                              )
                       );
 
-              return sdf.format(
-                      c.getTime()
-              );
-          }
+                  } else {
 
-          private long ageInDays(
-                  Calendar dob,
-                  Calendar today
-          ) {
+                      for (String item : due) {
 
-              Calendar a =
-                      (Calendar) dob.clone();
+                          TextView row =
+                                  text(
+                                          "• " + item,
+                                          14,
+                                          Color.rgb(
+                                                  40,
+                                                  70,
+                                                  75
+                                          ),
+                                          false
+                                  );
 
-              Calendar b =
-                      (Calendar) today.clone();
 
-              a.set(
-                      Calendar.HOUR_OF_DAY,
-                      12
-              );
+                          row.setPadding(
+                                  dp(4),
+                                  dp(7),
+                                  dp(4),
+                                  dp(7)
+                          );
 
-              b.set(
-                      Calendar.HOUR_OF_DAY,
-                      12
-              );
 
-              return (
-                      b.getTimeInMillis()
-                      - a.getTimeInMillis()
-              ) / (24L * 60L * 60L * 1000L);
-          }
+                          dueCard.addView(row);
+                      }
+                  }
 
-          private boolean femaleSelected() {
 
-              return genderSpinner
-                      .getSelectedItemPosition()
-                      == 0;
-          }
-
-          private boolean ageAtLeast(
-                  int years,
-                  int months,
-                  int days,
-                  int y,
-                  int m
-          ) {
-
-              if (years > y) {
-                  return true;
+                  resultBox.addView(dueCard);
               }
 
-              if (years < y) {
-                  return false;
-              }
 
-              return months >= m;
-          }
+              // =====================================================
+              // DUE VACCINES
+              // =====================================================
 
-          private boolean ageAtMost(
-                  int years,
-                  int months,
-                  int days,
-                  int y,
-                  int m
-          ) {
+              private List<String>
+              getDueVaccines() {
 
-              if (years < y) {
-                  return true;
-              }
+                  List<String> list =
+                          new ArrayList<>();
 
-              if (years > y) {
-                  return false;
-              }
 
-              return months < m
-                      || (months == m && days == 0)
-                      || months == m;
-          }
-           EOF
-                 - name: Create MainActivity part 3
-        shell: bash
-        run: |
-          cat >> app/src/main/java/com/ak/agevaccine/MainActivity.java <<'EOF'
+                  // BIRTH
+                  if (
+                          reached(0, 0, 0)
+                                  &&
+                          beforeLimit(0, 0, 1)
+                  ) {
 
-          private void showDueVaccines(
-                  int years,
-                  int months,
-                  int days,
-                  Calendar dob,
-                  Calendar today
-          ) {
-
-              LinearLayout card = card();
-
-              TextView heading = text(
-                      "💉 आयु के अनुसार देय / लंबित टीके",
-                      18,
-                      DARK,
-                      true
-              );
-
-              card.addView(heading);
-
-              TextView note = text(
-                      "नोट: यह सूची केवल आयु के आधार पर है। "
-                      + "यदि कोई टीका पहले लग चुका है तो उसे दोबारा "
-                      + "देय न मानें। टीकाकरण रिकॉर्ड अवश्य मिलाएं।",
-                      12,
-                      Color.DKGRAY,
-                      false
-              );
-
-              note.setPadding(
-                      0,
-                      dp(8),
-                      0,
-                      dp(10)
-              );
-
-              card.addView(note);
-
-              StringBuilder result =
-                      new StringBuilder();
-
-              long totalDays =
-                      ageInDays(dob, today);
-
-              // Birth vaccines
-              if (totalDays <= 1) {
-
-                  addDue(
-                          result,
-                          "Hepatitis-B Birth Dose",
-                          "जन्म के समय / 24 घंटे के भीतर",
-                          "0.5 ml",
-                          "IM",
-                          "जांघ का antero-lateral भाग"
-                  );
-              }
-
-              if (totalDays <= 15) {
-
-                  addDue(
-                          result,
-                          "OPV-0",
-                          "जन्म के समय / पहले 15 दिन",
-                          "2 drops",
-                          "Oral",
-                          "मुंह"
-                  );
-              }
-
-              if (totalDays <= 365) {
-
-                  addDue(
-                          result,
-                          "BCG",
-                          "जन्म से 1 वर्ष तक",
-                          "0.05 ml (<1 माह), फिर 0.1 ml",
-                          "Intradermal",
-                          "बायां ऊपरी बाजू"
-                  );
-              }
-
-              // 6 week vaccines
-              if (totalDays >= 42) {
-
-                  addDue(
-                          result,
-                          "OPV-1",
-                          "6 सप्ताह",
-                          "2 drops",
-                          "Oral",
-                          "मुंह"
-                  );
-
-                  addDue(
-                          result,
-                          "Pentavalent-1",
-                          "6 सप्ताह",
-                          "0.5 ml",
-                          "IM",
-                          "जांघ का antero-lateral भाग"
-                  );
-
-                  addDue(
-                          result,
-                          "Rotavirus-1",
-                          "6 सप्ताह",
-                          "5 drops*",
-                          "Oral",
-                          "मुंह"
-                  );
-
-                  addDue(
-                          result,
-                          "fIPV-1",
-                          "6 सप्ताह",
-                          "0.1 ml",
-                          "Intradermal",
-                          "दायां ऊपरी बाजू"
-                  );
-
-                  addDue(
-                          result,
-                          "PCV-1",
-                          "6 सप्ताह",
-                          "0.5 ml",
-                          "IM",
-                          "जांघ का antero-lateral भाग"
-                  );
-              }
-
-              // 10 week vaccines
-              if (totalDays >= 70) {
-
-                  addDue(
-                          result,
-                          "OPV-2",
-                          "10 सप्ताह",
-                          "2 drops",
-                          "Oral",
-                          "मुंह"
-                  );
-
-                  addDue(
-                          result,
-                          "Pentavalent-2",
-                          "10 सप्ताह",
-                          "0.5 ml",
-                          "IM",
-                          "जांघ का antero-lateral भाग"
-                  );
-
-                  addDue(
-                          result,
-                          "Rotavirus-2",
-                          "10 सप्ताह",
-                          "5 drops*",
-                          "Oral",
-                          "मुंह"
-                  );
-              }
-
-              // 14 week vaccines
-              if (totalDays >= 98) {
-
-                  addDue(
-                          result,
-                          "OPV-3",
-                          "14 सप्ताह",
-                          "2 drops",
-                          "Oral",
-                          "मुंह"
-                  );
-
-                  addDue(
-                          result,
-                          "Pentavalent-3",
-                          "14 सप्ताह",
-                          "0.5 ml",
-                          "IM",
-                          "जांघ का antero-lateral भाग"
-                  );
-
-                  addDue(
-                          result,
-                          "Rotavirus-3",
-                          "14 सप्ताह",
-                          "5 drops*",
-                          "Oral",
-                          "मुंह"
-                  );
-
-                  addDue(
-                          result,
-                          "fIPV-2",
-                          "14 सप्ताह",
-                          "0.1 ml",
-                          "Intradermal",
-                          "दायां ऊपरी बाजू"
-                  );
-
-                  addDue(
-                          result,
-                          "PCV-2",
-                          "14 सप्ताह",
-                          "0.5 ml",
-                          "IM",
-                          "जांघ का antero-lateral भाग"
-                  );
-              }
-
-              // 9 months
-              if (ageAtLeast(
-                      years, months, days, 0, 9
-              )) {
-
-                  if (years == 0 ||
-                          years == 1 ||
-                          years < 5) {
-
-                      addDue(
-                              result,
-                              "MR-1",
-                              "9–12 माह",
-                              "0.5 ml",
-                              "Sub-cutaneous",
-                              "दायां ऊपरी बाजू"
+                      list.add(
+                              "जन्म पर: BCG — 0.05/0.1 ml — Intradermal — बायाँ ऊपरी बांह"
                       );
 
-                      addDue(
-                              result,
-                              "Vitamin-A 1st",
-                              "9 माह",
-                              "1 ml (1 lakh IU)",
-                              "Oral",
-                              "मुंह"
+
+                      list.add(
+                              "जन्म पर: Hepatitis-B Birth Dose — 0.5 ml — IM — जांघ का anterolateral भाग"
                       );
 
-                      addDue(
-                              result,
-                              "PCV Booster",
-                              "9–12 माह",
-                              "0.5 ml",
-                              "IM",
-                              "जांघ का antero-lateral भाग"
+
+                      list.add(
+                              "जन्म/पहले 15 दिन: OPV-0 — 2 drops — Oral"
                       );
                   }
 
-                  addDue(
-                          result,
-                          "JE-1*",
-                          "9–12 माह",
-                          "0.5 ml",
-                          "Sub-cutaneous",
-                          "बायां ऊपरी बाजू"
-                  );
+
+                  // 6 WEEKS
+                  if (
+                          reached(0, 1, 14)
+                                  &&
+                          beforeLimit(1, 0, 0)
+                  ) {
+
+                      list.add(
+                              "6 सप्ताह: OPV-1"
+                      );
+
+                      list.add(
+                              "6 सप्ताह: Pentavalent-1"
+                      );
+
+                      list.add(
+                              "6 सप्ताह: RVV-1"
+                      );
+
+                      list.add(
+                              "6 सप्ताह: fIPV-1"
+                      );
+
+                      list.add(
+                              "6 सप्ताह: PCV-1"
+                      );
+                  }
+
+
+                  // 10 WEEKS
+                  if (
+                          reached(0, 2, 14)
+                                  &&
+                          beforeLimit(1, 0, 0)
+                  ) {
+
+                      list.add(
+                              "10 सप्ताह: OPV-2"
+                      );
+
+                      list.add(
+                              "10 सप्ताह: Pentavalent-2"
+                      );
+
+                      list.add(
+                              "10 सप्ताह: RVV-2"
+                      );
+                  }
+
+
+                  // 14 WEEKS
+                  if (
+                          reached(0, 3, 14)
+                                  &&
+                          beforeLimit(1, 0, 0)
+                  ) {
+
+                      list.add(
+                              "14 सप्ताह: OPV-3"
+                      );
+
+                      list.add(
+                              "14 सप्ताह: Pentavalent-3"
+                      );
+
+                      list.add(
+                              "14 सप्ताह: RVV-3"
+                      );
+
+                      list.add(
+                              "14 सप्ताह: fIPV-2"
+                      );
+
+                      list.add(
+                              "14 सप्ताह: PCV-2"
+                      );
+                  }
+
+
+                  // 9-12 MONTHS
+                  if (
+                          reached(0, 9, 0)
+                                  &&
+                          beforeLimit(1, 0, 0)
+                  ) {
+
+                      list.add(
+                              "9–12 माह: MR-1"
+                      );
+
+                      list.add(
+                              "9–12 माह: PCV Booster"
+                      );
+
+                      list.add(
+                              "9–12 माह: JE-1*"
+                      );
+
+                      list.add(
+                              "9 माह: Vitamin-A 1st dose"
+                      );
+                  }
+
+
+                  // 16-24 MONTHS
+                  if (
+                          reached(1, 4, 0)
+                                  &&
+                          beforeLimit(2, 0, 0)
+                  ) {
+
+                      list.add(
+                              "16–24 माह: MR-2"
+                      );
+
+                      list.add(
+                              "16–24 माह: DPT Booster-1"
+                      );
+
+                      list.add(
+                              "16–24 माह: OPV Booster"
+                      );
+
+                      list.add(
+                              "16–24 माह: JE-2*"
+                      );
+
+                      list.add(
+                              "16–24 माह: Vitamin-A"
+                      );
+                  }
+
+
+                  // 5-6 YEARS
+                  if (
+                          reached(5, 0, 0)
+                                  &&
+                          beforeLimit(6, 0, 0)
+                  ) {
+
+                      list.add(
+                              "5–6 वर्ष: DPT Booster-2"
+                      );
+                  }
+
+
+                  // 10 YEARS
+                  if (
+                          reached(10, 0, 0)
+                                  &&
+                          beforeLimit(10, 6, 0)
+                  ) {
+
+                      list.add(
+                              "10 वर्ष: Td"
+                      );
+                  }
+
+
+                  // 16 YEARS
+                  if (
+                          reached(16, 0, 0)
+                                  &&
+                          beforeLimit(16, 6, 0)
+                  ) {
+
+                      list.add(
+                              "16 वर्ष: Td"
+                      );
+                  }
+
+
+                  // =================================================
+                  // HPV — USER SPECIFIC RULE
+                  // 14 YEARS + 1 DAY TO 15 YEARS 3 MONTHS
+                  // =================================================
+
+                  if (isFemale()) {
+
+                      Calendar hpvStart =
+                              addAge(
+                                      dob,
+                                      14,
+                                      0,
+                                      1
+                              );
+
+
+                      Calendar hpvEnd =
+                              addAge(
+                                      dob,
+                                      15,
+                                      3,
+                                      0
+                              );
+
+
+                      if (
+                              !today.before(
+                                      hpvStart
+                              )
+                                      &&
+                              !today.after(
+                                      hpvEnd
+                              )
+                      ) {
+
+                          list.add(
+                                  "HPV — आपकी दी गई guideline के अनुसार: 14 वर्ष + 1 दिन से 15 वर्ष 3 माह तक — बालिका के लिए Due"
+                          );
+                      }
+                  }
+
+
+                  return list;
               }
 
-              // 16-24 months
-              if (ageAtLeast(
-                      years, months, days, 1, 4
-              )) {
 
-                  addDue(
-                          result,
-                          "DPT Booster-1",
-                          "16–24 माह",
-                          "0.5 ml",
-                          "IM",
-                          "जांघ का antero-lateral भाग"
+              // =====================================================
+              // TIMETABLE
+              // =====================================================
+
+              private void showTimetable() {
+
+                  final String[][] data = {
+
+                          {
+                                  "BCG",
+                                  "जन्म",
+                                  "Tuberculosis (TB)",
+                                  "0.05 ml / 0.1 ml",
+                                  "Intradermal",
+                                  "बायाँ ऊपरी बांह"
+                          },
+
+                          {
+                                  "Hepatitis-B Birth",
+                                  "जन्म, 24 घंटे के भीतर",
+                                  "Hepatitis-B",
+                                  "0.5 ml",
+                                  "IM",
+                                  "जांघ का anterolateral भाग"
+                          },
+
+                          {
+                                  "OPV-0",
+                                  "जन्म–15 दिन",
+                                  "Polio",
+                                  "2 drops",
+                                  "Oral",
+                                  "मुख से"
+                          },
+
+                          {
+                                  "OPV-1/2/3",
+                                  "6, 10, 14 सप्ताह",
+                                  "Polio",
+                                  "2 drops",
+                                  "Oral",
+                                  "मुख से"
+                          },
+
+                          {
+                                  "Pentavalent-1/2/3",
+                                  "6, 10, 14 सप्ताह",
+                                  "Diphtheria + Pertussis + Tetanus + Hepatitis-B + Hib",
+                                  "0.5 ml",
+                                  "Intramuscular",
+                                  "बायाँ anterolateral thigh"
+                          },
+
+                          {
+                                  "RVV-1/2/3",
+                                  "6, 10, 14 सप्ताह",
+                                  "Rotavirus disease",
+                                  "निर्माता अनुसार",
+                                  "Oral",
+                                  "मुख से"
+                          },
+
+                          {
+                                  "fIPV-1/2",
+                                  "6 एवं 14 सप्ताह",
+                                  "Polio",
+                                  "0.1 ml",
+                                  "Intradermal",
+                                  "दायाँ upper arm"
+                          },
+
+                          {
+                                  "PCV-1/2",
+                                  "6 एवं 14 सप्ताह",
+                                  "Pneumococcal disease",
+                                  "0.5 ml",
+                                  "Intramuscular",
+                                  "दायाँ anterolateral thigh"
+                          },
+
+                          {
+                                  "PCV Booster",
+                                  "9–12 माह",
+                                  "Pneumococcal disease",
+                                  "0.5 ml",
+                                  "Intramuscular",
+                                  "दायाँ anterolateral thigh"
+                          },
+
+                          {
+                                  "MR-1",
+                                  "9–12 माह",
+                                  "Measles & Rubella",
+                                  "0.5 ml",
+                                  "Subcutaneous",
+                                  "दायाँ upper arm"
+                          },
+
+                          {
+                                  "JE-1*",
+                                  "9–12 माह",
+                                  "Japanese Encephalitis",
+                                  "0.5 ml",
+                                  "Subcutaneous",
+                                  "बायाँ upper arm"
+                          },
+
+                          {
+                                  "DPT Booster-1",
+                                  "16–24 माह",
+                                  "Diphtheria + Pertussis + Tetanus",
+                                  "0.5 ml",
+                                  "Intramuscular",
+                                  "Anterolateral thigh"
+                          },
+
+                          {
+                                  "MR-2",
+                                  "16–24 माह",
+                                  "Measles & Rubella",
+                                  "0.5 ml",
+                                  "Subcutaneous",
+                                  "दायाँ upper arm"
+                          },
+
+                          {
+                                  "OPV Booster",
+                                  "16–24 माह",
+                                  "Polio",
+                                  "2 drops",
+                                  "Oral",
+                                  "मुख से"
+                          },
+
+                          {
+                                  "DPT Booster-2",
+                                  "5–6 वर्ष",
+                                  "Diphtheria + Pertussis + Tetanus",
+                                  "0.5 ml",
+                                  "Intramuscular",
+                                  "Upper arm"
+                          },
+
+                          {
+                                  "Td",
+                                  "10 वर्ष",
+                                  "Tetanus + Diphtheria",
+                                  "0.5 ml",
+                                  "Intramuscular",
+                                  "Upper arm"
+                          },
+
+                          {
+                                  "Td",
+                                  "16 वर्ष",
+                                  "Tetanus + Diphtheria",
+                                  "0.5 ml",
+                                  "Intramuscular",
+                                  "Upper arm"
+                          },
+
+                          {
+                                  "Vitamin-A",
+                                  "9 माह से 5 वर्ष तक",
+                                  "Vitamin-A deficiency prevention",
+                                  "1 ml first dose",
+                                  "Oral",
+                                  "मुख से"
+                          }
+                  };
+
+
+                  ScrollView scroll =
+                          new ScrollView(this);
+
+
+                  LinearLayout root =
+                          new LinearLayout(this);
+
+                  root.setOrientation(
+                          LinearLayout.VERTICAL
                   );
 
-                  addDue(
-                          result,
-                          "MR-2",
-                          "16–24 माह",
-                          "0.5 ml",
-                          "Sub-cutaneous",
-                          "दायां ऊपरी बाजू"
+                  root.setPadding(
+                          dp(16),
+                          dp(12),
+                          dp(16),
+                          dp(20)
                   );
 
-                  addDue(
-                          result,
-                          "OPV Booster",
-                          "16–24 माह",
-                          "2 drops",
-                          "Oral",
-                          "मुंह"
+                  root.setBackgroundColor(
+                          BACKGROUND
                   );
 
-                  addDue(
-                          result,
-                          "JE-2*",
-                          "16–24 माह",
-                          "0.5 ml",
-                          "Sub-cutaneous",
-                          "बायां ऊपरी बाजू"
+
+                  root.addView(
+                          text(
+                                  "टीकाकरण टाइम-टेबल",
+                                  22,
+                                  DARK,
+                                  true
+                          )
                   );
 
-                  addDue(
-                          result,
-                          "Vitamin-A",
-                          "16 माह से हर 6 माह",
-                          "2 ml (2 lakh IU)",
-                          "Oral",
-                          "मुंह"
+
+                  root.addView(
+                          text(
+                                  "राष्ट्रीय टीकाकरण अनुसूची के आधार पर संक्षिप्त जानकारी",
+                                  13,
+                                  Color.GRAY,
+                                  false
+                          )
                   );
+
+
+                  for (String[] row : data) {
+
+                      LinearLayout c =
+                              card();
+
+
+                      c.addView(
+                              text(
+                                      row[0],
+                                      17,
+                                      TEAL,
+                                      true
+                              )
+                      );
+
+
+                      c.addView(
+                              text(
+                                      "कब: "
+                                              + row[1],
+                                      14,
+                                      DARK,
+                                      false
+                              )
+                      );
+
+
+                      c.addView(
+                              text(
+                                      "किसलिए: "
+                                              + row[2],
+                                      14,
+                                      DARK,
+                                      false
+                              )
+                      );
+
+
+                      c.addView(
+                              text(
+                                      "Dose: "
+                                              + row[3],
+                                      14,
+                                      DARK,
+                                      false
+                              )
+                      );
+
+
+                      c.addView(
+                              text(
+                                      "Route: "
+                                              + row[4],
+                                      14,
+                                      DARK,
+                                      false
+                              )
+                      );
+
+
+                      c.addView(
+                              text(
+                                      "Site: "
+                                              + row[5],
+                                      14,
+                                      DARK,
+                                      false
+                              )
+                      );
+
+
+                      root.addView(c);
+                  }
+
+
+                  root.addView(
+                          text(
+                                  "* JE selected/endemic areas में लागू हो सकता है। स्थानीय सरकारी guideline देखें।",
+                                  12,
+                                  Color.GRAY,
+                                  false
+                          )
+                  );
+
+
+                  scroll.addView(root);
+
+
+                  Dialog dialog =
+                          new Dialog(this);
+
+
+                  LinearLayout wrapper =
+                          new LinearLayout(this);
+
+                  wrapper.setOrientation(
+                          LinearLayout.VERTICAL
+                  );
+
+                  wrapper.setBackgroundColor(
+                          BACKGROUND
+                  );
+
+
+                  wrapper.addView(
+                          scroll,
+                          new LinearLayout.LayoutParams(
+                                  -1,
+                                  0,
+                                  1
+                          )
+                  );
+
+
+                  Button close =
+                          button(
+                                  "बंद करें"
+                          );
+
+
+                  wrapper.addView(
+                          close,
+                          new LinearLayout.LayoutParams(
+                                  -1,
+                                  dp(52)
+                          )
+                  );
+
+
+                  close.setOnClickListener(
+                          v -> dialog.dismiss()
+                  );
+
+
+                  dialog.setContentView(wrapper);
+
+                  dialog.show();
+
+
+                  if (
+                          dialog.getWindow()
+                                  != null
+                  ) {
+
+                      dialog.getWindow()
+                              .setLayout(
+                                      -1,
+                                      -1
+                              );
+                  }
               }
-
-              // DPT booster 2
-              if (ageAtLeast(
-                      years, months, days, 5, 0
-              ) && years <= 7) {
-
-                  addDue(
-                          result,
-                          "DPT Booster-2",
-                          "5–6 वर्ष",
-                          "0.5 ml",
-                          "IM",
-                          "ऊपरी बाजू"
-                  );
-              }
-
-              // Td at 10 years
-              if (ageAtLeast(
-                      years, months, days, 10, 0
-              ) && years < 16) {
-
-                  addDue(
-                          result,
-                          "Td",
-                          "10 वर्ष",
-                          "0.5 ml",
-                          "IM",
-                          "ऊपरी बाजू"
-                  );
-              }
-
-              // Td at 16 years
-              if (ageAtLeast(
-                      years, months, days, 16, 0
-              )) {
-
-                  addDue(
-                          result,
-                          "Td",
-                          "16 वर्ष",
-                          "0.5 ml",
-                          "IM",
-                          "ऊपरी बाजू"
-                  );
-              }
-
-              // User requested HPV rule
-              if (femaleSelected()
-                      && ageAfter14Within15Years3Months(
-                              years,
-                              months,
-                              days
-                      )) {
-
-                  addDue(
-                          result,
-                          "HPV Vaccine ⭐",
-                          "आपके दिए नियम के अनुसार: "
-                                  + "14 वर्ष से 15 वर्ष 3 माह तक",
-                          "Guideline के अनुसार",
-                          "Guideline के अनुसार",
-                          "Guideline के अनुसार"
-                  );
-              }
-
-              if (result.length() == 0) {
-
-                  TextView none = text(
-                          "इस आयु के लिए ऊपर दिए गए नियमों के अनुसार "
-                                  + "कोई नया age-based due item नहीं मिला।\n\n"
-                                  + "यदि कोई पिछली dose छूटी है तो "
-                                  + "vaccination record के आधार पर catch-up "
-                                  + "की आवश्यकता अलग से तय होगी।",
-                          14,
-                          TEXT,
-                          false
-                  );
-
-                  card.addView(none);
-
-              } else {
-
-                  TextView list = text(
-                          result.toString(),
-                          14,
-                          TEXT,
-                          false
-                  );
-
-                  list.setLineSpacing(
-                          dp(4),
-                          1.0f
-                  );
-
-                  card.addView(list);
-              }
-
-              TextView foot = text(
-                      "\n* JE केवल लागू क्षेत्र/जिले में।\n"
-                              + "* Rotavirus/PCV का उपयोग संबंधित "
-                              + "कार्यक्रमीय प्रावधान के अनुसार।\n"
-                              + "* यह age-based सहायता है; "
-                              + "अंतिम निर्णय अधिकृत immunization "
-                              + "guideline और रिकॉर्ड के अनुसार करें।",
-                      11,
-                      Color.DKGRAY,
-                      false
-              );
-
-              card.addView(foot);
-
-              resultBox.addView(card);
-          }
-         EOF
-               - name: Create MainActivity part 4
-        shell: bash
-        run: |
-          cat >> app/src/main/java/com/ak/agevaccine/MainActivity.java <<'EOF'
-
-          private boolean ageAfter14Within15Years3Months(
-                  int years,
-                  int months,
-                  int days
-          ) {
-
-              boolean greaterThan14 =
-                      years > 14
-                              || (years == 14
-                              && (months > 0 || days > 0));
-
-              boolean within15Years3Months =
-                      years < 15
-                              || (years == 15
-                              && months <= 3);
-
-              return greaterThan14
-                      && within15Years3Months;
-          }
-
-          private void addDue(
-                  StringBuilder sb,
-                  String vaccine,
-                  String when,
-                  String dose,
-                  String route,
-                  String site
-          ) {
-
-              sb.append("💉 ")
-                      .append(vaccine)
-                      .append("\n");
-
-              sb.append("   कब: ")
-                      .append(when)
-                      .append("\n");
-
-              sb.append("   Dose: ")
-                      .append(dose)
-                      .append("\n");
-
-              sb.append("   Route: ")
-                      .append(route)
-                      .append("\n");
-
-              sb.append("   Site: ")
-                      .append(site)
-                      .append("\n\n");
-          }
-
-          private void showVaccinationTable() {
-
-              ScrollView scroll =
-                      new ScrollView(this);
-
-              LinearLayout box =
-                      new LinearLayout(this);
-
-              box.setOrientation(
-                      LinearLayout.VERTICAL
-              );
-
-              box.setPadding(
-                      dp(18),
-                      dp(12),
-                      dp(18),
-                      dp(20)
-              );
-
-              addTableRow(
-                      box,
-                      "BCG",
-                      "जन्म–1 वर्ष",
-                      "TB से सुरक्षा",
-                      "1 dose",
-                      "0.05/0.1 ml",
-                      "ID",
-                      "बायां ऊपरी बाजू"
-              );
-
-              addTableRow(
-                      box,
-                      "Hep-B Birth",
-                      "जन्म, 24 घंटे के भीतर",
-                      "Hepatitis-B",
-                      "1 dose",
-                      "0.5 ml",
-                      "IM",
-                      "जांघ"
-              );
-
-              addTableRow(
-                      box,
-                      "OPV-0",
-                      "जन्म–15 दिन",
-                      "Polio",
-                      "1 dose",
-                      "2 drops",
-                      "Oral",
-                      "मुंह"
-              );
-
-              addTableRow(
-                      box,
-                      "OPV-1,2,3",
-                      "6, 10, 14 सप्ताह",
-                      "Polio",
-                      "3 doses",
-                      "2 drops",
-                      "Oral",
-                      "मुंह"
-              );
-
-              addTableRow(
-                      box,
-                      "Pentavalent-1,2,3",
-                      "6, 10, 14 सप्ताह",
-                      "Diphtheria, Pertussis, Tetanus, "
-                              + "Hep-B, Hib",
-                      "3 doses",
-                      "0.5 ml",
-                      "IM",
-                      "जांघ"
-              );
-
-              addTableRow(
-                      box,
-                      "Rotavirus-1,2,3",
-                      "6, 10, 14 सप्ताह",
-                      "Rotavirus diarrhoea",
-                      "3 doses",
-                      "5 drops*",
-                      "Oral",
-                      "मुंह"
-              );
-
-              addTableRow(
-                      box,
-                      "fIPV-1,2",
-                      "6 और 14 सप्ताह",
-                      "Polio",
-                      "2 fractional doses",
-                      "0.1 ml",
-                      "ID",
-                      "दायां ऊपरी बाजू"
-              );
-
-              addTableRow(
-                      box,
-                      "PCV",
-                      "6, 14 सप्ताह + "
-                              + "9–12 माह booster",
-                      "Pneumococcal diseases",
-                      "2 + booster",
-                      "0.5 ml",
-                      "IM",
-                      "जांघ"
-              );
-
-              addTableRow(
-                      box,
-                      "MR-1",
-                      "9–12 माह",
-                      "Measles + Rubella",
-                      "1 dose",
-                      "0.5 ml",
-                      "SC",
-                      "दायां ऊपरी बाजू"
-              );
-
-              addTableRow(
-                      box,
-                      "JE-1*",
-                      "9–12 माह",
-                      "Japanese Encephalitis",
-                      "1 dose",
-                      "0.5 ml",
-                      "SC",
-                      "बायां ऊपरी बाजू"
-              );
-
-              addTableRow(
-                      box,
-                      "Vitamin-A 1st",
-                      "9 माह",
-                      "Vitamin-A deficiency",
-                      "1 dose",
-                      "1 ml / 1 lakh IU",
-                      "Oral",
-                      "मुंह"
-              );
-
-              addTableRow(
-                      box,
-                      "DPT Booster-1",
-                      "16–24 माह",
-                      "Diphtheria, Pertussis, Tetanus",
-                      "1 dose",
-                      "0.5 ml",
-                      "IM",
-                      "जांघ"
-              );
-
-              addTableRow(
-                      box,
-                      "MR-2",
-                      "16–24 माह",
-                      "Measles + Rubella",
-                      "1 dose",
-                      "0.5 ml",
-                      "SC",
-                      "दायां ऊपरी बाजू"
-              );
-
-              addTableRow(
-                      box,
-                      "OPV Booster",
-                      "16–24 माह",
-                      "Polio",
-                      "1 dose",
-                      "2 drops",
-                      "Oral",
-                      "मुंह"
-              );
-
-              addTableRow(
-                      box,
-                      "JE-2*",
-                      "16–24 माह",
-                      "Japanese Encephalitis",
-                      "1 dose",
-                      "0.5 ml",
-                      "SC",
-                      "बायां ऊपरी बाजू"
-              );
-
-              addTableRow(
-                      box,
-                      "Vitamin-A 2nd–9th",
-                      "16 माह से हर 6 माह, "
-                              + "5 वर्ष तक",
-                      "Vitamin-A deficiency",
-                      "8 doses तक",
-                      "2 ml / 2 lakh IU",
-                      "Oral",
-                      "मुंह"
-              );
-
-              addTableRow(
-                      box,
-                      "DPT Booster-2",
-                      "5–6 वर्ष",
-                      "Diphtheria, Pertussis, Tetanus",
-                      "1 dose",
-                      "0.5 ml",
-                      "IM",
-                      "ऊपरी बाजू"
-              );
-
-              addTableRow(
-                      box,
-                      "Td",
-                      "10 वर्ष",
-                      "Tetanus + Diphtheria",
-                      "1 dose",
-                      "0.5 ml",
-                      "IM",
-                      "ऊपरी बाजू"
-              );
-
-              addTableRow(
-                      box,
-                      "Td",
-                      "16 वर्ष",
-                      "Tetanus + Diphtheria",
-                      "1 dose",
-                      "0.5 ml",
-                      "IM",
-                      "ऊपरी बाजू"
-              );
-
-              TextView notes = text(
-                      "\nमहत्वपूर्ण:\n"
-                              + "• * JE केवल लागू क्षेत्र/जिले में।\n"
-                              + "• * Rotavirus/PCV संबंधित "
-                              + "कार्यक्रमीय प्रावधान के अनुसार।\n"
-                              + "• Vaccine record के बिना केवल उम्र "
-                              + "के आधार पर dose को repeat न करें।\n"
-                              + "• HPV के लिए ऐप में आपका "
-                              + "custom age-rule अलग से लागू है।",
-                      12,
-                      Color.DKGRAY,
-                      false
-              );
-
-              box.addView(notes);
-
-              scroll.addView(box);
-
-              new AlertDialog.Builder(this)
-                      .setTitle(
-                              "📋 Vaccination Time Table"
-                      )
-                      .setView(scroll)
-                      .setPositiveButton(
-                              "बंद करें",
-                              null
-                      )
-                      .show();
-          }
-
-          private void addTableRow(
-                  LinearLayout parent,
-                  String vaccine,
-                  String age,
-                  String disease,
-                  String doses,
-                  String dose,
-                  String route,
-                  String site
-          ) {
-
-              LinearLayout row = card();
-
-              TextView name = text(
-                      "💉 " + vaccine,
-                      17,
-                      DARK,
-                      true
-              );
-
-              row.addView(name);
-
-              row.addView(
-                      text(
-                              "📅 कब: " + age
-                                      + "\n"
-                                      + "🛡 किससे बचाता है: "
-                                      + disease
-                                      + "\n"
-                                      + "🔢 Dose संख्या: "
-                                      + doses
-                                      + "\n"
-                                      + "💧 मात्रा: " + dose
-                                      + "\n"
-                                      + "💉 Route: " + route
-                                      + "\n"
-                                      + "📍 Site: " + site,
-                              13,
-                              TEXT,
-                              false
-                      )
-              );
-
-              parent.addView(row);
           }
           EOF
-                - name: Generate Gradle Wrapper
+
+
+      # =========================================================
+      # GENERATE GRADLE WRAPPER
+      # =========================================================
+
+      - name: Generate Gradle Wrapper
         shell: bash
         run: |
           set -e
+
           gradle wrapper --gradle-version 8.7
 
-      - name: Make Gradle executable
-        shell: bash
-        run: |
           chmod +x ./gradlew
 
-      - name: Finish MainActivity
-        shell: bash
-        run: |
-          cat >> app/src/main/java/com/ak/agevaccine/MainActivity.java <<'EOF'
 
-          private LinearLayout card() {
-
-              LinearLayout box =
-                      new LinearLayout(this);
-
-              box.setOrientation(
-                      LinearLayout.VERTICAL
-              );
-
-              box.setPadding(
-                      dp(16),
-                      dp(16),
-                      dp(16),
-                      dp(16)
-              );
-
-              box.setBackground(
-                      rounded(Color.WHITE, 18)
-              );
-
-              LinearLayout.LayoutParams p =
-                      new LinearLayout.LayoutParams(
-                              -1,
-                              -2
-                      );
-
-              p.bottomMargin = dp(14);
-
-              box.setLayoutParams(p);
-
-              return box;
-          }
-
-          private TextView label(String value) {
-
-              TextView t =
-                      text(
-                              value,
-                              14,
-                              DARK,
-                              true
-                      );
-
-              t.setPadding(
-                      dp(2),
-                      dp(10),
-                      0,
-                      dp(6)
-              );
-
-              return t;
-          }
-
-          private TextView text(
-                  String value,
-                  int size,
-                  int color,
-                  boolean bold
-          ) {
-
-              TextView t =
-                      new TextView(this);
-
-              t.setText(value);
-              t.setTextSize(size);
-              t.setTextColor(color);
-
-              if (bold) {
-
-                  t.setTypeface(
-                          Typeface.DEFAULT,
-                          Typeface.BOLD
-                  );
-              }
-
-              return t;
-          }
-
-          private Button smallButton(String value) {
-
-              Button b =
-                      new Button(this);
-
-              b.setText(value);
-              b.setTextSize(20);
-              b.setTextColor(WHITE);
-              b.setAllCaps(false);
-
-              b.setBackground(
-                      rounded(
-                              Color.rgb(0, 105, 92),
-                              14
-                      )
-              );
-
-              b.setMinWidth(0);
-              b.setMinimumWidth(0);
-
-              return b;
-          }
-
-          private LinearLayout.LayoutParams fieldParams() {
-
-              LinearLayout.LayoutParams p =
-                      new LinearLayout.LayoutParams(
-                              -1,
-                              dp(52)
-                      );
-
-              p.bottomMargin = dp(5);
-
-              return p;
-          }
-
-          private GradientDrawable rounded(
-                  int color,
-                  int radius
-          ) {
-
-              GradientDrawable d =
-                      new GradientDrawable();
-
-              d.setColor(color);
-              d.setCornerRadius(
-                      dp(radius)
-              );
-
-              return d;
-          }
-
-          private int dp(int value) {
-
-              return (int) (
-                      value
-                      * getResources()
-                              .getDisplayMetrics()
-                              .density
-              );
-          }
-          }
-          EOF
+      # =========================================================
+      # VERIFY PROJECT
+      # =========================================================
 
       - name: Verify Android project
         shell: bash
         run: |
           set -e
 
-          echo "========================================"
-          echo "VERIFYING AGE VACCINE APP"
-          echo "========================================"
+          echo "======================================"
+          echo "VERIFYING ANDROID PROJECT"
+          echo "======================================"
 
-          test -f app/src/main/AndroidManifest.xml
-          test -f app/src/main/res/values/strings.xml
-          test -f app/src/main/res/values/themes.xml
-          test -f app/src/main/res/drawable/ic_vaccine.xml
           test -f app/src/main/java/com/ak/agevaccine/MainActivity.java
+          test -f app/src/main/AndroidManifest.xml
+          test -f app/src/main/res/values/colors.xml
+          test -f app/src/main/res/values/themes.xml
+          test -f app/src/main/res/values/strings.xml
+          test -f app/src/main/res/drawable/ic_app.xml
           test -f app/build.gradle
           test -f settings.gradle
           test -f build.gradle
           test -f gradle.properties
           test -f gradlew
 
-          echo "All project files found."
+          echo "All required files are present."
+          echo "======================================"
 
-      - name: Check Java source
-        shell: bash
-        run: |
-          set -e
 
-          grep -q "class MainActivity" \
-            app/src/main/java/com/ak/agevaccine/MainActivity.java
-
-          grep -q "calculateAge" \
-            app/src/main/java/com/ak/agevaccine/MainActivity.java
-
-          grep -q "showVaccinationTable" \
-            app/src/main/java/com/ak/agevaccine/MainActivity.java
-
-          grep -q "HPV Vaccine" \
-            app/src/main/java/com/ak/agevaccine/MainActivity.java
-
-          echo "Java source verification passed."
+      # =========================================================
+      # BUILD APK
+      # =========================================================
 
       - name: Build Debug APK
         shell: bash
@@ -1945,19 +2040,37 @@ jobs:
 
           ./gradlew clean assembleDebug --stacktrace
 
+
+      # =========================================================
+      # VERIFY APK
+      # =========================================================
+
       - name: Verify generated APK
         shell: bash
         run: |
           set -e
 
-          test -f app/build/outputs/apk/debug/app-debug.apk
+          APK="app/build/outputs/apk/debug/app-debug.apk"
 
-          ls -lh app/build/outputs/apk/debug/app-debug.apk
+          test -f "$APK"
 
-          echo "APK generated successfully."
+          echo "======================================"
+          echo "APK GENERATED SUCCESSFULLY"
+          echo "======================================"
 
-      - name: Upload Age Vaccine APK
+          ls -lh "$APK"
+
+
+      # =========================================================
+      # UPLOAD APK
+      # =========================================================
+
+       - name: Upload APK
         uses: actions/upload-artifact@v4
+        with:
+          name: Age-Calculator-with-Vaccine-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
         with:
           name: Age-Calculator-with-Vaccine-APK
           path: app/build/outputs/apk/debug/app-debug.apk
